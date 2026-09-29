@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdint>
+#include <cstring>
 
 // bitboards for all 12 pieces. LSB is A1
 // follows fen notation:
@@ -26,6 +27,12 @@ struct State {
 	uint64_t K;
 };
 
+#define FEN_CASE(name)     \
+	case #name[0]:       \
+		state.name |= pos; \
+		file++;            \
+		break;
+
 State fen(std::string in) {
 	State state = State {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -33,25 +40,26 @@ State fen(std::string in) {
 	uint8_t rank = 7; // fen starts at top left
 	uint8_t file = 0;
 
-	// start with a 1 at the LSB, which is A1
-	// shift first by rank, then by file
-	uint64_t pos = 1 << (rank * 8) << file;
-
 	for (char c : in) {
-		switch (c) {
-			case 'P':
-			case 'N':
-			case 'B':
-			case 'R':
-			case 'Q':
-			case 'K':
+		// start with a 1 at the LSB, which is A1
+		// shift first by rank, then by file
+		uint64_t pos = 1ULL << (rank * 8) << file;
+		// printf("%064lb\n", pos);
 
-			case 'p':
-			case 'n':
-			case 'b':
-			case 'r':
-			case 'q':
-			case 'k':
+		switch (c) {
+			FEN_CASE(P)
+			FEN_CASE(N)
+			FEN_CASE(B)
+			FEN_CASE(R)
+			FEN_CASE(Q)
+			FEN_CASE(K)
+
+			FEN_CASE(p)
+			FEN_CASE(n)
+			FEN_CASE(b)
+			FEN_CASE(r)
+			FEN_CASE(q)
+			FEN_CASE(k)
 
 			case '1':
 			case '2':
@@ -61,15 +69,19 @@ State fen(std::string in) {
 			case '6':
 			case '7':
 			case '8':
+				rank += c - '0';
+				break;
 
 			case '/':
 				rank--;
-				file = 1;
+				file = 0;
 		};
 	}
+
+	return state;
 }
 
-void print_board(uint64_t bitboard) {
+void print_bitboard(uint64_t bitboard) {
 	uint64_t mask = 0b11111111ULL << 56; // a row of ones at the top
 	for (int i = 0; i < 8; i++) {
 		uint64_t row = bitboard & mask;
@@ -78,8 +90,41 @@ void print_board(uint64_t bitboard) {
 	}
 }
 
-int main(void) {
-    // std::ios_base::sync_with_stdio(false);
-    // std::cin.tie(NULL);
-	print_board(0xFF00FF00FF00FF00);
+#define ADD_PIECE(name) 			\
+	if (board.name & (1ULL << i)) { \
+		out[i] = #name[0]; 			\
+	}
+
+void print_board(State board) { 
+	char out[64];
+	std::memset(out, '.', 64);
+
+	for (int i = 0; i < 64; i++) {
+		ADD_PIECE(P)
+		ADD_PIECE(N)
+		ADD_PIECE(B)
+		ADD_PIECE(R)
+		ADD_PIECE(Q)
+		ADD_PIECE(K)
+
+		ADD_PIECE(p)
+		ADD_PIECE(n)
+		ADD_PIECE(b)
+		ADD_PIECE(r)
+		ADD_PIECE(q)
+		ADD_PIECE(k)
+	}
+
+	for (int i = 0; i < 64; i++) {
+		printf("%c", out[i]);
+		if ((i + 1) % 8 == 0) printf("\n");
+	}
+}
+
+int main(void) { 
+    std::ios_base::sync_with_stdio(false);
+    std::cin.tie(NULL);
+
+	State start = fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+	print_board(start);
 }

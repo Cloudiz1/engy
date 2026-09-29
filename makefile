@@ -1,14 +1,36 @@
 CXX      := g++
-CXXFLAGS := -Wall -Wextra -pedantic -std=c++20 -MMD -MP
+BASE_FLAGS := -Wall -Wextra -pedantic -std=c++20 -MMD -MP
 
 SRC_DIR  := src
-OBJ_DIR  := build
+OBJ_BASE := build
 BIN_DIR  := bin
 
-TARGET   := $(BIN_DIR)/out
+# Default build type
+BUILD_TYPE ?= debug
+
+# Configure flags, object directories, and target names dynamically
+ifeq ($(BUILD_TYPE),prod)
+    CXXFLAGS    := $(BASE_FLAGS) -O3 -DNDEBUG
+    OBJ_DIR     := $(OBJ_BASE)/prod
+    TARGET_NAME := out_prod
+else
+    CXXFLAGS    := $(BASE_FLAGS) -g -O0 -DDEBUG
+    OBJ_DIR     := $(OBJ_BASE)/debug
+    TARGET_NAME := out_debug
+endif
+
+TARGET   := $(BIN_DIR)/$(TARGET_NAME)
 SRCS     := $(wildcard $(SRC_DIR)/*.cpp)
 OBJS     := $(patsubst $(SRC_DIR)/%.cpp, $(OBJ_DIR)/%.o, $(SRCS))
 DEPS     := $(OBJS:.o=.d)
+
+# Shortcut targets
+.PHONY: debug prod
+debug:
+	@$(MAKE) BUILD_TYPE=debug all
+
+prod:
+	@$(MAKE) BUILD_TYPE=prod all
 
 all: $(TARGET)
 
@@ -25,4 +47,4 @@ $(OBJ_DIR) $(BIN_DIR):
 
 .PHONY: all clean
 clean:
-	rm -rf $(OBJ_DIR) $(BIN_DIR)
+	rm -rf $(OBJ_BASE) $(BIN_DIR)
