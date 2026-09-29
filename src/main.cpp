@@ -1,16 +1,18 @@
+#include <array>
 #include <iostream>
 #include <cstdint>
 #include <cstring>
+#include <sstream>
 
 // bitboards for all 12 pieces. LSB is A1
 // follows fen notation:
 // lowercase for white, upper for black
-// p -> pawn
-// n -> knight
-// b -> bishop
-// r -> rook
-// q -> queen
-// k -> king
+// p: pawn
+// n: knight
+// b: bishop
+// r: rook
+// q: queen
+// k: king
 struct State {
 	uint64_t p;
 	uint64_t n;
@@ -25,27 +27,54 @@ struct State {
 	uint64_t R;
 	uint64_t Q;
 	uint64_t K;
+
+	// LSB to MSB:
+	// white to move
+	// can white short castle
+	// can white long castle
+	// can black short castle
+	// can black long castle
+	uint8_t metadata;
+	
+	// half moves since last capture
+	uint8_t half_moves;
+
+	// total full moves
+	uint8_t full_moves;
 };
 
 #define FEN_CASE(name)     \
-	case #name[0]:       \
+	case #name[0]:         \
 		state.name |= pos; \
 		file++;            \
 		break;
 
-State fen(std::string in) {
-	State state = State {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+State fen(std::string fen) {
+	State state = State {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1 };
+
+	std::stringstream ss(fen);
+	std::string board, move, castling, en_passant, halfmove, fullmove;
+	if (!(ss >> board
+			 >> move
+			 >> castling
+			 >> en_passant
+			 >> halfmove
+			 >> fullmove
+	)) {
+		std::cerr << "invalid FEN notation\n";
+		exit(-1);
+	}
 
 	// these are zero indexed
 	uint8_t rank = 7; // fen starts at top left
 	uint8_t file = 0;
 
-	for (char c : in) {
+	for (char c : board) {
 		// start with a 1 at the LSB, which is A1
 		// shift first by rank, then by file
 		uint64_t pos = 1ULL << (rank * 8) << file;
-		// printf("%064lb\n", pos);
 
+		// parse board state
 		switch (c) {
 			FEN_CASE(P)
 			FEN_CASE(N)
@@ -75,8 +104,43 @@ State fen(std::string in) {
 			case '/':
 				rank--;
 				file = 0;
+				break;
+
+			default:
+				std::cerr << "error parsing FEN, found: "  << c << "\n";
+				exit(-1);
 		};
 	}
+	
+	if (move[0] == 'b') state.metadata = 0b0;
+
+	for (char c : castling) {
+		switch (c) {
+			case 'k':
+				state.metadata |= 0b10;
+				break;
+			case 'q':
+				state.metadata |= 0b100;
+				break;
+			case 'K':
+				state.metadata |= 0b1000;
+				break;
+			case 'Q':
+				state.metadata |= 0b10000;
+				break;
+			case '-':
+				break;
+			default:
+				printf("unexpected character while parsing casting in FEN");
+				exit(-1);
+				break;
+		}
+	}
+
+	// TODO: en passant target square
+
+	state.half_moves = std::stoi(halfmove);
+	state.full_moves = std::stoi(fullmove);
 
 	return state;
 }
@@ -90,9 +154,9 @@ void print_bitboard(uint64_t bitboard) {
 	}
 }
 
-#define ADD_PIECE(name) 			\
+#define ADD_PIECE(name)             \
 	if (board.name & (1ULL << i)) { \
-		out[i] = #name[0]; 			\
+		out[i] = #name[0];          \
 	}
 
 void print_board(State board) { 
@@ -119,12 +183,41 @@ void print_board(State board) {
 		printf("%c", out[i]);
 		if ((i + 1) % 8 == 0) printf("\n");
 	}
+
+	// print metadata
+	printf("\n");
+	if (board.metadata & 1) printf("white to move\n");
+	else printf("black to move\n");
+
+	printf("available castling:\n");
+	for (int i = 1; i < 5; i++) {
+		if (board.metadata & (0b10 << i)) {
+			switch (i) {
+				case 1:
+					printf("white short\n");
+					break;
+				case 2:
+					printf("white long\n");
+					break;
+				case 3:
+					printf("black short\n");
+					break;
+				case 4:
+					printf("black long\n");
+					break;
+			}
+		}
+	}
+
+	printf("\n");
+	printf("half moves since last capture or pawn move: %d\n", board.half_moves);
+	printf("total full moves: %d\n", board.full_moves);
 }
 
 int main(void) { 
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(NULL);
 
-	State start = fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR");
+	State start = fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 	print_board(start);
 }
