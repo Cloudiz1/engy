@@ -1,8 +1,10 @@
-#include <array>
 #include <iostream>
 #include <cstdint>
 #include <cstring>
 #include <sstream>
+
+// #include "../include/zobrist.hpp"
+#include "zobrist.cpp"
 
 // bitboards for all 12 pieces. LSB is A1
 // follows fen notation:

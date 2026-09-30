@@ -1,0 +1,3 @@
+struct Zobrist {
+	Zobrist();
+};
