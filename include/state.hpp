@@ -32,6 +32,8 @@ struct State {
 	// can black short castle
 	// can black long castle
 	std::uint8_t metadata;
+
+	std::uint8_t ep;
 	
 	// half moves since last capture
 	std::uint8_t half_moves;
