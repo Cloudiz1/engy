@@ -1,16 +1,18 @@
 #include <cstring>
 #include <iostream>
 
+#include "../include/magic.hpp"
 #include "../include/state.hpp"
-#include "../include/zobrist.hpp"
 #include "../include/util.hpp"
+#include "../include/zobrist.hpp"
 
 int main(void) {
     std::ios_base::sync_with_stdio(false);
     std::cin.tie(NULL);
 
     State start = fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-	Zobrist zobrist;
+    Zobrist zobrist;
 
-	printf("%064lb\n", zobrist.hash(start));
+    // printf("%064lb\n", zobrist.hash(start));
+    generate_rook_table();
 }
