@@ -1,8 +1,10 @@
+#include <cstdint>
 #include <cstring>
 #include <iostream>
 #include <sstream>
 
 #include "../include/state.hpp"
+#include "../include/zobrist.hpp"
 
 #define FEN_CASE(name)     \
     case #name[0]:         \
@@ -11,7 +13,7 @@
         break;
 
 State fen(std::string fen) {
-    State state = State{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1};
+    State state = {};
 
     std::stringstream ss(fen);
     std::string board, move, castling, en_passant, halfmove, fullmove;
@@ -67,27 +69,35 @@ State fen(std::string fen) {
         };
     }
 
-    if (move[0] == 'b')
-        state.metadata = 0b0;
+	// creates obstructions bitboard
+    // clang-format off
+	#define X(piece, _pindex) \
+		state.obstructions &= state.piece;
+	PIECES
+	#undef X
+	// clang-format on
+
+    if (move[0] == 'w')
+        state.metadata = 0b10000;
 
     for (char c : castling) {
         switch (c) {
         case 'k':
-            state.metadata |= 0b10;
+            state.metadata |= 0b1;
             break;
         case 'q':
-            state.metadata |= 0b100;
+            state.metadata |= 0b10;
             break;
         case 'K':
-            state.metadata |= 0b1000;
+            state.metadata |= 0b100;
             break;
         case 'Q':
-            state.metadata |= 0b10000;
+            state.metadata |= 0b1000;
             break;
         case '-':
             break;
         default:
-            printf("unexpected character while parsing casting in FEN");
+            printf("unexpected character while parsing castling in FEN");
             exit(-1);
             break;
         }
@@ -143,14 +153,14 @@ void print_board(State board) {
 
     // print metadata
     printf("\n");
-    if (board.metadata & 1)
+    if (board.metadata & 0b10000)
         printf("white to move\n");
     else
         printf("black to move\n");
 
     printf("available castling:\n");
     for (int i = 1; i < 5; i++) {
-        if (board.metadata & (0b10 << i)) {
+        if (board.metadata & (1 << i)) {
             switch (i) {
             case 1:
                 printf("white short\n");

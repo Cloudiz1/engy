@@ -25,12 +25,14 @@ struct State {
 	std::uint64_t Q;
 	std::uint64_t K;
 
+	std::uint64_t obstructions;
+
 	// LSB to MSB:
-	// white to move
 	// can white short castle
 	// can white long castle
 	// can black short castle
 	// can black long castle
+	// white to move
 	std::uint8_t metadata;
 
 	std::uint8_t ep;

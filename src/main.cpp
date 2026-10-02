@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include "../include/state.hpp"
+#include "../include/zobrist.hpp"
 #include "../include/util.hpp"
 
 int main(void) {
@@ -9,5 +10,7 @@ int main(void) {
     std::cin.tie(NULL);
 
     State start = fen("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-    print_board(start);
+	Zobrist zobrist;
+
+	printf("%064lb\n", zobrist.hash(start));
 }
