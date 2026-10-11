@@ -6,12 +6,6 @@
 #include "../include/state.hpp"
 #include "../include/zobrist.hpp"
 
-#define FEN_CASE(name)     \
-    case #name[0]:         \
-        state.name |= pos; \
-        file++;            \
-        break;
-
 State fen(std::string fen) {
     State state = {};
 
@@ -25,6 +19,12 @@ State fen(std::string fen) {
     // these are zero indexed
     uint8_t rank = 7; // fen starts at top left
     uint8_t file = 0;
+
+    #define FEN_CASE(name) \
+    case #name[0]:         \
+        state.name |= pos; \
+        file++;            \
+        break;
 
     for (char c : board) {
         // start with a 1 at the LSB, which is A1
@@ -69,13 +69,12 @@ State fen(std::string fen) {
         };
     }
 
-	// creates obstructions bitboard
-    // clang-format off
-	#define X(piece, _pindex) \
-		state.obstructions &= state.piece;
-	PIECES
-	#undef X
-	// clang-format on
+    // creates obstructions bitboard
+    #define X(piece, _pindex) \
+    state.obstructions &= state.piece;
+
+    PIECES
+    #undef X
 
     if (move[0] == 'w')
         state.metadata = 0b10000;
@@ -118,16 +117,18 @@ void print_bitboard(uint64_t bitboard) {
         printf("%08lb\n", row >> 56);
         bitboard <<= 8;
     }
-}
 
-#define ADD_PIECE(name)             \
-    if (board.name & (1ULL << i)) { \
-        out[i] = #name[0];          \
-    }
+    printf("\n");
+}
 
 void print_board(State board) {
     char out[64];
     std::memset(out, '.', 64);
+
+    #define ADD_PIECE(name)         \
+    if (board.name & (1ULL << i)) { \
+        out[i] = #name[0];          \
+    }
 
     for (int i = 0; i < 64; i++) {
         ADD_PIECE(P)
