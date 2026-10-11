@@ -14,5 +14,5 @@ int main(void) {
     Zobrist zobrist;
 
     // printf("%064lb\n", zobrist.hash(start));
-    generate_rook_table();
+	generate_tables();
 }
